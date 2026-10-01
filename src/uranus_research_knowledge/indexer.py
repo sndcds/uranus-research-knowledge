@@ -1,7 +1,9 @@
 """Single-writer reconciliation. Never delete before every write succeeds."""
 
 from dataclasses import dataclass, field
+from itertools import batched
 
+from .clients import MAX_EMBEDDING_BATCH_SIZE
 from .models import Chunk
 
 
@@ -68,9 +70,9 @@ async def reconcile(client, chunks, diff, existing=None):
             key = (c.content_hash, c.embedding_version, c.chunk_text)
             if key not in cached:
                 missing[key] = c.chunk_text
-        if missing:
-            encoded = await client.embed(list(missing.values()), "passage")
-            cached.update(zip(missing, encoded, strict=True))
+        for keys in batched(missing, MAX_EMBEDDING_BATCH_SIZE, strict=False):
+            encoded = await client.embed([missing[key] for key in keys], "passage")
+            cached.update(zip(keys, encoded, strict=True))
         vectors = [cached[(c.content_hash, c.embedding_version, c.chunk_text)] for c in batch]
         await client.qdrant(
             "PUT",
