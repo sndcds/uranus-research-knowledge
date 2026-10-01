@@ -60,3 +60,5 @@ component. Other questions route to evidence retrieval but may remain unsupporte
 until explicit source assertions are reviewed.
 
 See [validation](docs/validation.md) for executed checks and limitations.
+
+[Implementation handoff and coordinated PRs](docs/implementation-report.md).
