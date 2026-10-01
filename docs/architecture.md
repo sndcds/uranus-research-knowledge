@@ -18,9 +18,9 @@ excerpt plus immutable source provenance, never hidden reasoning.
 
 ## Versioned migration
 
-Keep planner `/plan` and Admin `/api/v1/research/query` v1 unchanged. Introduce
-planner `/v2/plan` and Admin `/api/v1/research/v2/query`, with schema identifier
-`research-query-plan-v2`. The first v2 implementation recognizes a bounded,
+Keep planner `/plan` and Admin `/api/v1/research/query` current v3 contracts unchanged. Introduce
+planner `/v4/plan` and Admin `/api/v1/research/v4/query`, with schema identifier
+`research-query-plan-v4`. The first v4 implementation recognizes a bounded,
 tested DE/EN/DA question catalogue; unrecognized or ambiguous requests return an
 explicit unsupported response. Expansion to an LLM requires the same closed
 schema validation. No unrestricted fallback is permitted.
@@ -52,7 +52,7 @@ eligible Research population; preserve effective occurrence venue inheritance,
 public status gates and area resolution. Stable ties use source identifiers.
 
 `description_characters` uses the public event description projected through
-Research's existing `vector_documents.clean`: HTML hidden elements removed,
+Research's existing `semantic_documents.public_clean`: HTML hidden elements removed,
 entities decoded, NFC normalization, public-text redaction and whitespace
 normalization. Python `len` counts Unicode code points, not UTF-8 bytes or
 graphemes. Markdown delimiters remain text under this explicitly chosen existing
@@ -203,7 +203,7 @@ routing and exact PostgreSQL metrics using a disposable test database.
 Review and merge separate service/planner/Admin changes. Provision public source
 snapshots and reviewed assertions, provision the isolated collection and encoder,
 run plan then reconcile, test authenticated internal endpoints, then opt clients
-into v2. Keep v1 available during migration. Browser presentation can migrate
-after contract review; no existing UI is silently switched. Rollback disables v2
+into v4. Keep v3 available during migration. Browser presentation can migrate
+after contract review; no existing UI is silently switched. Rollback disables v4
 configuration without affecting existing data Research. Deployments, real indexing,
 publication and production credential access are outside this implementation run.

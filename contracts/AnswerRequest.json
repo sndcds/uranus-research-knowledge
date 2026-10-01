@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "fact": {
+      "default": "unknown",
+      "enum": [
+        "uranus_overview",
+        "admin_overview",
+        "semantic_search_repository",
+        "embedding_component",
+        "embedding_model",
+        "qdrant_usage",
+        "encoder_communication",
+        "planner_component",
+        "geocoding",
+        "architecture",
+        "founding_date",
+        "unknown"
+      ],
+      "title": "Fact",
+      "type": "string"
+    },
+    "limit": {
+      "default": 10,
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "query": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Query",
+      "type": "string"
+    }
+  },
+  "required": [
+    "query"
+  ],
+  "title": "AnswerRequest",
+  "type": "object"
+}
