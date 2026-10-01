@@ -279,6 +279,90 @@ async def test_encoder_contract_and_fixed_requests(settings, snapshot):
     await client.close()
 
 
+@pytest.mark.parametrize("fail_second_batch", [False, True])
+async def test_reconcile_batches_encoder_requests(settings, snapshot, fail_second_batch):
+    chunks = extract(snapshot, NOW)
+    diff = plan(chunks, {}, repository=REPO, complete=True)
+    desired = {c.point_id: c for c in chunks}
+    texts = list(dict.fromkeys(desired[k].chunk_text for k in diff.new))
+    assert len(texts) > 2
+    vectors = {text: [float(i == n) for i in range(1024)] for n, text in enumerate(texts)}
+    encoder_batches = []
+    writes = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        if request.url.path == "/embed":
+            assert request.method == "POST"
+            assert body["model"] == "jina-v3" and body["kind"] == "passage"
+            assert 1 <= len(body["texts"]) <= 2
+            encoder_batches.append(body["texts"])
+            if fail_second_batch and len(encoder_batches) == 2:
+                return httpx.Response(503, json={"error": "unavailable"})
+            return httpx.Response(
+                200,
+                json={
+                    "embedding_version": EMBEDDING_VERSION,
+                    "vectors": [vectors[text] for text in body["texts"]],
+                },
+            )
+        assert request.method == "PUT"
+        assert request.url.path.endswith("/points") and request.url.query == b"wait=true"
+        writes.append(body["points"])
+        return httpx.Response(200, json={"status": "ok", "result": {}})
+
+    client = Clients(settings, httpx.MockTransport(handler))
+    try:
+        if fail_second_batch:
+            with pytest.raises(UpstreamError):
+                await reconcile(client, chunks, diff)
+            assert len(encoder_batches) == 2
+            assert not writes
+        else:
+            await reconcile(client, chunks, diff)
+            assert len(encoder_batches) == (len(texts) + 1) // 2
+            assert [text for batch in encoder_batches for text in batch] == texts
+            assert writes == [
+                [
+                    {
+                        "id": k,
+                        "vector": vectors[desired[k].chunk_text],
+                        "payload": desired[k].model_dump(mode="json"),
+                    }
+                    for k in diff.new
+                ]
+            ]
+    finally:
+        await client.close()
+
+
+@pytest.mark.parametrize("count", [0, 1, 2, 3, 64])
+async def test_encoder_batch_bounds(settings, count):
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "embedding_version": EMBEDDING_VERSION,
+                "vectors": [[1.0] + [0.0] * 1023 for _ in range(count)],
+            },
+        )
+
+    client = Clients(settings, httpx.MockTransport(handler))
+    try:
+        if 1 <= count <= 2:
+            assert len(await client.embed(["text"] * count, "passage")) == count
+            assert len(calls) == 1
+        else:
+            with pytest.raises(ValueError, match="invalid_embedding_batch"):
+                await client.embed(["text"] * count, "passage")
+            assert not calls
+    finally:
+        await client.close()
+
+
 @pytest.mark.parametrize("vectors", [[], [[float("nan")] * 1024], [[0.0] * 1024], [[1.0] * 3]])
 async def test_bad_encoder_vectors(settings, vectors):
     client = Clients(

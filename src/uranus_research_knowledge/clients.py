@@ -9,6 +9,8 @@ import httpx
 from .config import Settings
 from .models import COLLECTION, EMBEDDING_VERSION, OWNER, Chunk
 
+MAX_EMBEDDING_BATCH_SIZE = 2
+
 
 class UpstreamError(Exception):
     pass
@@ -69,7 +71,7 @@ class Clients:
             raise UpstreamError("upstream_unavailable") from None
 
     async def embed(self, texts, kind):
-        if not 1 <= len(texts) <= 64:
+        if not 1 <= len(texts) <= MAX_EMBEDDING_BATCH_SIZE:
             raise ValueError("invalid_embedding_batch")
         data = await self.request(
             "encoder",
