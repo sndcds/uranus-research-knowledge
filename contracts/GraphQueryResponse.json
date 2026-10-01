@@ -1,0 +1,266 @@
+{
+  "$defs": {
+    "GraphEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "structural",
+            "reviewed"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "object": {
+          "title": "Object",
+          "type": "string"
+        },
+        "predicate": {
+          "$ref": "#/$defs/Relation"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "predicate",
+        "object",
+        "evidence_ids",
+        "kind"
+      ],
+      "title": "GraphEdge",
+      "type": "object"
+    },
+    "GraphEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "chunk_text": {
+          "anyOf": [
+            {
+              "maxLength": 480,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chunk Text"
+        },
+        "commit_sha": {
+          "title": "Commit Sha",
+          "type": "string"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "evidence_available": {
+          "const": true,
+          "default": true,
+          "title": "Evidence Available",
+          "type": "boolean"
+        },
+        "evidence_redistribution_allowed": {
+          "title": "Evidence Redistribution Allowed",
+          "type": "boolean"
+        },
+        "excerpt_included": {
+          "title": "Excerpt Included",
+          "type": "boolean"
+        },
+        "graph_edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Graph Edge Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "license": {
+          "title": "License",
+          "type": "string"
+        },
+        "license_source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Source Url"
+        },
+        "line_end": {
+          "minimum": 1,
+          "title": "Line End",
+          "type": "integer"
+        },
+        "line_start": {
+          "minimum": 1,
+          "title": "Line Start",
+          "type": "integer"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "repository",
+        "path",
+        "commit_sha",
+        "source_url",
+        "content_hash",
+        "line_start",
+        "line_end",
+        "license",
+        "evidence_redistribution_allowed",
+        "excerpt_included",
+        "graph_edge_ids"
+      ],
+      "title": "GraphEvidence",
+      "type": "object"
+    },
+    "GraphNode": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/NodeType"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "GraphNode",
+      "type": "object"
+    },
+    "NodeType": {
+      "enum": [
+        "project",
+        "repository",
+        "component",
+        "service",
+        "document",
+        "source_file",
+        "symbol",
+        "api_endpoint",
+        "feature",
+        "model",
+        "datastore",
+        "deployment_component",
+        "event",
+        "occurrence",
+        "venue",
+        "space",
+        "organization",
+        "category",
+        "genre",
+        "area"
+      ],
+      "title": "NodeType",
+      "type": "string"
+    },
+    "Relation": {
+      "enum": [
+        "contains",
+        "defines",
+        "implements",
+        "calls",
+        "uses",
+        "uses_model",
+        "reads_from",
+        "writes_to",
+        "exposes",
+        "documented_by",
+        "part_of",
+        "organizes",
+        "has_occurrence",
+        "occurs_at",
+        "uses_space",
+        "has_category",
+        "has_genre",
+        "located_in",
+        "implemented_by"
+      ],
+      "title": "Relation",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/GraphEdge"
+      },
+      "maxItems": 100,
+      "title": "Edges",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/GraphEvidence"
+      },
+      "maxItems": 1000,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/GraphNode"
+      },
+      "maxItems": 50,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "nodes",
+    "edges",
+    "evidence"
+  ],
+  "title": "GraphQueryResponse",
+  "type": "object"
+}

@@ -1,0 +1,213 @@
+{
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "description": "Public provenance projection: never serialize internal assertion quotes.",
+      "properties": {
+        "chunk_text": {
+          "anyOf": [
+            {
+              "maxLength": 480,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chunk Text"
+        },
+        "commit_sha": {
+          "title": "Commit Sha",
+          "type": "string"
+        },
+        "content_hash": {
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "evidence_available": {
+          "const": true,
+          "default": true,
+          "title": "Evidence Available",
+          "type": "boolean"
+        },
+        "evidence_redistribution_allowed": {
+          "title": "Evidence Redistribution Allowed",
+          "type": "boolean"
+        },
+        "excerpt_included": {
+          "title": "Excerpt Included",
+          "type": "boolean"
+        },
+        "graph_edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Graph Edge Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "license": {
+          "title": "License",
+          "type": "string"
+        },
+        "license_source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License Source Url"
+        },
+        "line_end": {
+          "minimum": 1,
+          "title": "Line End",
+          "type": "integer"
+        },
+        "line_start": {
+          "minimum": 1,
+          "title": "Line Start",
+          "type": "integer"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "repository": {
+          "title": "Repository",
+          "type": "string"
+        },
+        "source_url": {
+          "title": "Source Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "repository",
+        "path",
+        "commit_sha",
+        "source_url",
+        "content_hash",
+        "line_start",
+        "line_end",
+        "license",
+        "evidence_redistribution_allowed",
+        "excerpt_included",
+        "graph_edge_ids"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "GraphNode": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/NodeType"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ],
+      "title": "GraphNode",
+      "type": "object"
+    },
+    "Match": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "node": {
+          "$ref": "#/$defs/GraphNode"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "score",
+        "node",
+        "evidence"
+      ],
+      "title": "Match",
+      "type": "object"
+    },
+    "NodeType": {
+      "enum": [
+        "project",
+        "repository",
+        "component",
+        "service",
+        "document",
+        "source_file",
+        "symbol",
+        "api_endpoint",
+        "feature",
+        "model",
+        "datastore",
+        "deployment_component",
+        "event",
+        "occurrence",
+        "venue",
+        "space",
+        "organization",
+        "category",
+        "genre",
+        "area"
+      ],
+      "title": "NodeType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "authoritative_source": {
+      "const": "project_sources",
+      "default": "project_sources",
+      "title": "Authoritative Source",
+      "type": "string"
+    },
+    "matches": {
+      "items": {
+        "$ref": "#/$defs/Match"
+      },
+      "maxItems": 20,
+      "title": "Matches",
+      "type": "array"
+    },
+    "query": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Query",
+      "type": "string"
+    }
+  },
+  "required": [
+    "query",
+    "matches"
+  ],
+  "title": "QueryResponse",
+  "type": "object"
+}
