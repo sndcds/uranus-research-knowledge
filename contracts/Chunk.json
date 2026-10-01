@@ -15,8 +15,7 @@
             "planner_component",
             "geocoding",
             "architecture",
-            "founding_date",
-            "unknown"
+            "founding_date"
           ],
           "title": "Fact",
           "type": "string"
@@ -41,6 +40,99 @@
       ],
       "title": "Assertion",
       "type": "object"
+    },
+    "GraphAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_type": {
+          "$ref": "#/$defs/NodeType"
+        },
+        "predicate": {
+          "$ref": "#/$defs/Relation"
+        },
+        "quote": {
+          "maxLength": 480,
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "subject_id": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Subject Id",
+          "type": "string"
+        },
+        "subject_type": {
+          "$ref": "#/$defs/NodeType"
+        }
+      },
+      "required": [
+        "subject_type",
+        "subject_id",
+        "predicate",
+        "object_type",
+        "object_id",
+        "quote"
+      ],
+      "title": "GraphAssertion",
+      "type": "object"
+    },
+    "NodeType": {
+      "enum": [
+        "project",
+        "repository",
+        "component",
+        "service",
+        "document",
+        "source_file",
+        "symbol",
+        "api_endpoint",
+        "feature",
+        "model",
+        "datastore",
+        "deployment_component",
+        "event",
+        "occurrence",
+        "venue",
+        "space",
+        "organization",
+        "category",
+        "genre",
+        "area"
+      ],
+      "title": "NodeType",
+      "type": "string"
+    },
+    "Relation": {
+      "enum": [
+        "contains",
+        "defines",
+        "implements",
+        "calls",
+        "uses",
+        "uses_model",
+        "reads_from",
+        "writes_to",
+        "exposes",
+        "documented_by",
+        "part_of",
+        "organizes",
+        "has_occurrence",
+        "occurs_at",
+        "uses_space",
+        "has_category",
+        "has_genre",
+        "located_in",
+        "implemented_by"
+      ],
+      "title": "Relation",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -96,11 +188,19 @@
       "title": "Embedding Version",
       "type": "string"
     },
+    "graph_assertions": {
+      "items": {
+        "$ref": "#/$defs/GraphAssertion"
+      },
+      "maxItems": 20,
+      "title": "Graph Assertions",
+      "type": "array"
+    },
     "graph_edge_ids": {
       "items": {
         "type": "string"
       },
-      "maxItems": 10,
+      "maxItems": 100,
       "title": "Graph Edge Ids",
       "type": "array"
     },
@@ -108,7 +208,7 @@
       "items": {
         "type": "string"
       },
-      "maxItems": 10,
+      "maxItems": 50,
       "title": "Graph Node Ids",
       "type": "array"
     },

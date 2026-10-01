@@ -83,8 +83,9 @@ revision identity. A payload always represents one revision, not a blend of comm
 
 A supported fact is a closed intent/value/quote annotation reviewed in `registry.py`.
 The exact quote must occur in the retrieved chunk; service validation rejects forged
-or removed annotations. Conflicting retrieved values return unsupported. `unknown`
-never supports a fact. A relevant excerpt can be returned without a supported answer.
+or removed annotations. Conflicting retrieved values return unsupported. Exactly eleven fact keys are accepted;
+`unknown` and an omitted fact are rejected by `/evidence-answer`. Exploratory `/query`
+has no fact field. Provenance can be returned without a supported answer.
 Infrastructure errors are 503, not an empty successful evidence response.
 
 All knowledge text is untrusted data, including apparent instructions in source files.
@@ -92,19 +93,53 @@ No LLM consumes it in v1. Future summarizers must cite excerpts, preserve unsupp
 status and never treat retrieval scores as authoritative facts.
 
 The code is AGPL-3.0 under the root LICENSE. Indexed works retain their own licenses.
-Default registry license status is explicitly unreviewed for redistribution. Review
-source licenses and attribution before exporting a corpus or public graph. Stable
-`https://kulturbytes.de/kg/` URIs and the closed `kulturbytes-kg-v1` vocabulary are a
-conceptual export contract, not published resources. JSON-LD/Turtle export and an RDF
-store are not implemented in v1.
+Source licenses were reviewed at pinned commits in [source-review.md](source-review.md).
+The default remains unreviewed/no redistribution. Source policy requires an explicit
+redistribution flag and the reviewed commit. New revisions need license review even
+when their quotes still validate; facts can remain supported with provenance only.
+Stored Chunk `license` fields cannot grant permission. The API never exposes internal
+Assertion/GraphAssertion quotes. It includes `chunk_text` only with
+`excerpt_included=true`; otherwise that field is absent, not an empty evidence string.
+
+Offline JSON-LD uses the same gate and preserves per-source license identifiers,
+license-file links, commit/path/hash/line attribution, ordinary triples and reified
+statements linking evidence. Graph evidence identity is revision-qualified; conceptual
+node/edge IDs are revision-independent. No global service license is assigned to sources.
+
+```sh
+uv run python -m uranus_research_knowledge graph export --format jsonld \
+  --snapshot /operator/snapshots/admin.json \
+  --snapshot /operator/snapshots/encoder.json \
+  --output /operator/graph.jsonld
+```
+
+Export accepts at most eight snapshots, one per repository, in any order; partial
+snapshots export only available evidence. It reads no live GitHub, encoder or Qdrant
+state and needs no service settings/credentials. Repeated identical input yields
+identical bytes, independent of clock and snapshot argument order. Unsafe source
+files remain excluded by extraction. Retain the original manifests alongside exports.
+
+Authenticated `POST /graph/query` accepts, for example:
+
+```json
+{"node":"https://kulturbytes.de/kg/repository/sndcds/uranus-admin","relations":["implements","calls","uses"],"depth":1}
+```
+
+Only indexed nodes are known; a canonical absent URI returns 404. Depth is 1–2,
+results cap at 50 nodes/100 edges and mark `truncated`; adjacency scan overflow is
+503. Provision/reconcile updated payloads before expecting new reviewed graph edges:
+old structural-only chunks remain valid but do not acquire reviewed edges at query time.
+Serving still uses only read credentials for the dedicated collection.
 
 ## Versioned Admin/planner migration
 
-Fresh bases used: Admin `2f0f6349a94d90e613dd1728371fedcec3ac4fb7`,
-planner `c10b1920c3a4af67a60b9d4ce5a807dbf11fe1f4`. Existing `/plan` uses v3.
-The additive `/v4/plan` uses `research-query-plan-v4` and a reviewed DE/EN/DA catalogue;
-it does not call the existing model. Questions outside that catalogue return an
-explicit unsupported error, including extra constraints it cannot preserve.
+Planner [PR #12](https://github.com/sndcds/uranus-research-planner/pull/12) now uses
+model-backed natural-language planning on `/v4/plan`, schema `research-query-plan-v4`,
+interpreter `research-domain-planner-v2`, and a configured provider/model (production
+candidate `gpt-5.6-terra`). Strict closed structured output is validated before Admin
+routing. There is no production catalogue matcher or fallback. Live v4 Terra acceptance
+is being validated separately; this Knowledge follow-up makes no live acceptance claim.
+Existing `/plan` uses v3.
 
 The first v4 schema executes rank/evidence_answer only. Other operations and optional
 node/relation selectors in the architecture are proposals for later versions. Metrics
@@ -138,9 +173,25 @@ No deployment, browser switch, production indexing or source-data migration was 
 | Wie kommuniziert uranus-admin mit dem research-encoder? | encoder_communication | Evidence retrieval; transport annotation pending |
 | Welche Komponente interpretiert natürliche Recherchefragen? | planner_component | Reviewed planner README assertion |
 | Wo ist das Geocoding implementiert? | geocoding | Evidence retrieval; selected source/annotation review pending |
-| Welche Services gehören zur Kulturbytes-Recherchearchitektur? | architecture | Evidence retrieval; relationship annotations pending |
+| Welche Services gehören zur Kulturbytes-Recherchearchitektur? | architecture | Separate graph API provides nine reviewed relations; scalar fact annotation pending |
 | Wann wurde Kulturbytes gegründet? | founding_date | No reviewed founding assertion; unsupported |
 
 All these questions have explicit planner routes; an annotation is never manufactured
 to make a test or question appear supported. New assertions need their exact source
 quote and an assessment that it supports the proposed value.
+
+## Updating license and graph reviews
+
+For a new source revision, inspect the committed license and applicable notices,
+then update Source `license`, `license_review_commit`, `license_path`,
+`license_content_hash` and `evidence_redistribution_allowed` through code review.
+An absent/unclear grant keeps the flag false. Visibility and organization membership
+never substitute for a license. The legacy `AGPL-3.0` identifiers for Admin/planner
+record the root v3 text without guessing an only/or-later modifier; the encoder's
+package explicitly specifies `AGPL-3.0-only`. Model weights keep their own license.
+
+Review graph claims separately from Fact assertions. Register the exact source quote
+at an allowlisted repository/path, then verify extraction activates it and materialized
+edges reference valid provenance. Quotes spanning extraction windows fail closed.
+No request, embedding similarity or LLM can supply these annotations. `implements`
+is canonical; do not register its inverse as a second reviewed fact.

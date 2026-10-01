@@ -11,7 +11,15 @@ from starlette.responses import JSONResponse
 from .clients import Clients, UpstreamError
 from .config import Settings
 from .evidence import answer, query
-from .models import AnswerRequest, AnswerResponse, QueryRequest, QueryResponse
+from .graph import UnknownNode, graph_query
+from .models import (
+    AnswerRequest,
+    AnswerResponse,
+    GraphQueryRequest,
+    GraphQueryResponse,
+    QueryRequest,
+    QueryResponse,
+)
 
 
 def error(code, status):
@@ -109,6 +117,15 @@ def create_app(settings: Settings | None = None, client=None):
     async def timeout(_request, _exc):
         return error("knowledge_unavailable", 503)
 
+    @app.exception_handler(UnknownNode)
+    async def unknown_node(_request, _exc):
+        return error("unknown_node", 404)
+
+    @app.post("/graph/query", response_model=GraphQueryResponse, response_model_exclude_none=True)
+    async def graph(body: GraphQueryRequest):
+        async with asyncio.timeout(settings.timeout_seconds):
+            return await graph_query(upstream, body)
+
     @app.get("/health")
     async def health():
         return {"status": "ok"}
@@ -119,12 +136,12 @@ def create_app(settings: Settings | None = None, client=None):
             await upstream.check_collection()
         return {"status": "ready"}
 
-    @app.post("/query", response_model=QueryResponse)
+    @app.post("/query", response_model=QueryResponse, response_model_exclude_none=True)
     async def search(body: QueryRequest):
         async with asyncio.timeout(settings.timeout_seconds):
             return await query(upstream, body)
 
-    @app.post("/evidence-answer", response_model=AnswerResponse)
+    @app.post("/evidence-answer", response_model=AnswerResponse, response_model_exclude_none=True)
     async def fact_answer(body: AnswerRequest):
         async with asyncio.timeout(settings.timeout_seconds):
             return await answer(upstream, body)

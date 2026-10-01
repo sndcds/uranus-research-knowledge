@@ -3,13 +3,31 @@
 import json
 from pathlib import Path
 
-from .models import AnswerRequest, AnswerResponse, Chunk, QueryRequest, QueryResponse
+from .models import (
+    AnswerRequest,
+    AnswerResponse,
+    Chunk,
+    GraphQueryRequest,
+    GraphQueryResponse,
+    QueryRequest,
+    QueryResponse,
+)
+
+CONTRACTS = (
+    QueryRequest,
+    QueryResponse,
+    AnswerRequest,
+    AnswerResponse,
+    Chunk,
+    GraphQueryRequest,
+    GraphQueryResponse,
+)
 
 
 def main():
     target = Path("contracts")
     target.mkdir(exist_ok=True)
-    for model in (QueryRequest, QueryResponse, AnswerRequest, AnswerResponse, Chunk):
+    for model in CONTRACTS:
         (target / f"{model.__name__}.json").write_text(
             json.dumps(model.model_json_schema(), indent=2, sort_keys=True) + "\n"
         )

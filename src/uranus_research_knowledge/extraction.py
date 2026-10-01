@@ -8,9 +8,8 @@ from urllib.parse import quote
 
 from pydantic import Field, model_validator
 
-from .models import Chunk, Closed
+from .models import Chunk, Closed, chunk_graph
 from .registry import REGISTRY, safe_path, safe_text
-from .vocabulary import NodeType, edge_id, node_uri
 
 MAX_FILE_BYTES = 256 * 1024
 MAX_SNAPSHOT_BYTES = 4 * 1024 * 1024
@@ -100,11 +99,9 @@ def units(path: str, text: str):
 def extract(snapshot: Snapshot, indexed_at: datetime) -> list[Chunk]:
     source = REGISTRY[snapshot.repository]
     result = []
-    repo_node = node_uri(NodeType.repository, snapshot.repository)
     for path, content in sorted(snapshot.files.items()):
         if content is None or not safe_text(content):
             continue
-        file_node = node_uri(NodeType.source_file, f"{snapshot.repository}/{path}")
         for name, start, _end, raw in units(path, content):
             # Small character windows keep encoder inputs bounded even for non-Latin text.
             # Exact substrings retain line provenance; no normalization invents a quote.
@@ -114,15 +111,11 @@ def extract(snapshot: Snapshot, indexed_at: datetime) -> list[Chunk]:
                     continue
                 line_start = start + raw[:offset].count("\n")
                 line_end = line_start + value.removesuffix("\n").count("\n")
-                nodes = [repo_node, file_node]
-                edges = [edge_id(repo_node, "contains", file_node)]
                 symbol = name if path.endswith(".py") else None
-                if symbol:
-                    symbol_node = node_uri(
-                        NodeType.symbol, f"{snapshot.repository}/{path}/{symbol}"
-                    )
-                    nodes.append(symbol_node)
-                    edges.append(edge_id(file_node, "defines", symbol_node))
+                graph_assertions = [
+                    a for a in source.graph_assertions.get(path, ()) if a.quote in value
+                ]
+                nodes, edges, _ = chunk_graph(snapshot.repository, path, symbol, graph_assertions)
                 result.append(
                     Chunk(
                         repository=snapshot.repository,
@@ -146,7 +139,8 @@ def extract(snapshot: Snapshot, indexed_at: datetime) -> list[Chunk]:
                         line_end=line_end,
                         language="python" if symbol else None,
                         symbol=symbol,
-                        license=source.license,
+                        license=source.evidence_policy(snapshot.repository, snapshot.commit_sha)[0],
+                        graph_assertions=graph_assertions,
                         graph_node_ids=nodes,
                         graph_edge_ids=edges,
                         assertions=[a for a in source.assertions.get(path, ()) if a.quote in value],

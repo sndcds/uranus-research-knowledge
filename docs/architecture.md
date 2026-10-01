@@ -1,6 +1,7 @@
 # Kulturbytes Open Knowledge Research v1
 
-Status: design recorded before implementation, 2026-10-01. No deployment authorized.
+Status: initial design updated for the reviewed graph/license follow-up, 2026-10-01.
+No deployment authorized.
 
 ## Ownership and trust
 
@@ -20,15 +21,21 @@ excerpt plus immutable source provenance, never hidden reasoning.
 
 Keep planner `/plan` and Admin `/api/v1/research/query` current v3 contracts unchanged. Introduce
 planner `/v4/plan` and Admin `/api/v1/research/v4/query`, with schema identifier
-`research-query-plan-v4`. The first v4 implementation recognizes a bounded,
-tested DE/EN/DA question catalogue; unrecognized or ambiguous requests return an
-explicit unsupported response. Expansion to an LLM requires the same closed
-schema validation. No unrestricted fallback is permitted.
+`research-query-plan-v4`. V4 uses model-backed natural-language planning with
+`interpreter_version=research-domain-planner-v2`, a configured provider/model and
+strict closed structured output. The production candidate is `gpt-5.6-terra`.
+There is no production catalogue matching or unrestricted fallback. Live v4 Terra
+acceptance is still being validated separately, not established by Knowledge tests.
+
+Natural-language question → model-backed closed planner → Admin routes:
+`data` → PostgreSQL; `project_knowledge` → Knowledge service. Knowledge has no LLM,
+production database access or runtime GitHub crawling.
 
 Data plans contain `domain`, `operation=rank`, `entity_type`, an entity-compatible
 `metric`, `ordering`, `limit`, and optional `area_query`. Project plans contain
-`domain`, `operation=evidence_answer|semantic_search`, `knowledge_query`, optional
-allowlisted node/relation selectors and `answer_mode`. SQL, URLs, paths,
+`domain`, `operation=evidence_answer`, a closed `fact`, `knowledge_query` and
+`answer_mode=evidence`. Graph queries are a separate internal Knowledge API;
+planner graph selectors are not implemented. SQL, URLs, paths,
 collections and executors are never plan fields. The broader operation vocabulary
 is lookup/list/count/aggregate/rank/compare/traverse/semantic_search/evidence_answer;
 unsupported combinations are reserved for later versions, not silently executed.
@@ -86,13 +93,15 @@ Allowed relations and their intended endpoints:
 | venue | located_in | area |
 | project / repository | contains | repository / source_file |
 | source_file | defines | symbol |
-| repository | implements | feature |
-| component | calls | component |
-| service | uses | model |
-| service | reads_from / writes_to | datastore |
+| repository / component / service / deployment_component | implements | feature |
+| same actors | calls | component / service / api_endpoint |
+| same actors | uses | datastore / component / service / model |
+| same actors | uses_model | model |
+| same actors | reads_from / writes_to | datastore |
+| same actors | exposes | api_endpoint |
+| any node type | documented_by | document |
+| component / service / deployment_component | part_of | project |
 | api_endpoint | implemented_by | symbol |
-| feature | implemented_in | repository |
-| document | documents | component |
 
 Stable conceptual node URI: `https://kulturbytes.de/kg/{type}/{identifier}`;
 repository example: `https://kulturbytes.de/kg/repository/sndcds/uranus-admin`.
@@ -101,8 +110,11 @@ revision qualify assertions separately. Deterministic source extraction can crea
 containment/definition edges; other assertions require reviewed annotations with
 verbatim source excerpts. No LLM creates arbitrary edges.
 
-Future JSON-LD and RDF/Turtle export maps this vocabulary to a versioned namespace
-and named provenance records. Neither a triple store nor publication is required.
+Offline JSON-LD export maps the closed vocabulary to stable URIs and reified
+statements with revision-qualified evidence IDs. Ordering is deterministic and the
+export does not instantiate upstream clients. No triple store or publication is involved.
+`implements` is canonical; the redundant `implemented_in` inverse is not retained.
+`documented_by` similarly replaces the unused `documents` inverse.
 Source licensing is retained per repository; public visibility is not permission
 to relicense. Review each source license before distributing excerpts or an export.
 The repository license applies to service code, not automatically to indexed works.
@@ -112,7 +124,7 @@ The repository license applies to service code, not automatically to indexed wor
 Fixed initial registry: sndcds/uranus, uranus-admin, uranus-research-planner,
 uranus-research-encoder, pluto, uranus-dashboard, uranus-widget, kulturbytes-client.
 Registry changes are explicit code-review changes. Each source has exact reviewed
-paths, license attribution and optional reviewed fact annotations. README/docs,
+paths, pinned license attribution, reviewed fact annotations and separate GraphAssertions. README/docs,
 manifests, compose, OpenAPI, unit files and selected code are eligible categories,
 not permission to recursively index every file. Provisioning uses committed blobs
 at an explicit SHA, never working-tree files, symlinks or submodules. Public GitHub
@@ -156,15 +168,19 @@ per collection is an operator precondition; no automatic background indexing.
 ## Evidence API and factual support
 
 `POST /query` accepts only bounded query and limit and returns ranked source
-excerpts/provenance with source nodes. `POST /evidence-answer` accepts a bounded
-query and closed fact intent. Both are authenticated internal calls. Responses
+license-gated excerpts/provenance with source nodes. `POST /evidence-answer` accepts a bounded
+query and a required closed fact intent (exactly eleven FactKeys; no `unknown`). Both are authenticated internal calls. Responses
 identify indexed commits and `authoritative_source=project_sources`.
 
 For v1, supported facts come exclusively from reviewed, typed source annotations
 whose exact quotation occurs in a retrieved chunk at that revision. Search
 similarity alone cannot establish a fact. A conflicting set of fact values fails
 closed. Unsupported answers still expose retrieved evidence about what is known.
-General questions can return evidence without claiming a synthesized factual answer.
+General questions can return provenance without claiming a synthesized factual answer.
+Public Evidence is distinct from internal Chunk: quote-bearing assertion lists are never
+serialized. Unapproved revisions return `evidence_available=true`,
+`excerpt_included=false`, and no `chunk_text`. The Source registry alone decides
+redistribution; stored payload labels and request fields cannot enable it.
 Founding date requires an explicit founding assertion; a GitHub creation date,
 first commit or first release is never substituted.
 
@@ -207,3 +223,43 @@ into v4. Keep v3 available during migration. Browser presentation can migrate
 after contract review; no existing UI is silently switched. Rollback disables v4
 configuration without affecting existing data Research. Deployments, real indexing,
 publication and production credential access are outside this implementation run.
+
+## Reviewed graph API
+
+GraphAssertion is a separate closed model registered by repository/path. It contains
+closed subject/object node types, stable identifiers, a Relation enum and an exact
+reviewed quote. Only matching indexed chunks activate an assertion. Structural
+repository→source_file `contains` and source_file→symbol `defines` are exclusively
+extraction-derived. Location, names, similarity and models cannot add project edges.
+
+GraphNode carries URI/type; GraphEdge carries deterministic subject/predicate/object
+identity, structural/reviewed kind and nonempty evidence IDs. GraphEvidence retains
+commit/path/hash/line provenance under the same license gate. Logical edge IDs omit
+commit SHA; graph evidence IDs include revision, content and line bounds. Identical
+positive assertions coalesce and combine provenance. Relations are multivalued: two
+reviewed `uses_model` targets do not assert exclusivity. Negative assertions and
+free-form predicates are unsupported. Conflicting payloads for one point/revision
+fail closed; unlike single-valued Fact assertions, the graph never picks a winner
+between distinct positive relations. A reviewer must resolve any semantic contradiction
+before registering it; this positive vocabulary cannot encode negation or exclusivity.
+
+`POST /graph/query` accepts only `node`, `relations` and `depth` (1–2). It traverses
+incoming and outgoing neighbours while preserving canonical edge direction. Omitted
+or empty relations mean all closed predicates. Malformed/unsafe URIs and unknown
+predicates return 422; a syntactically valid URI absent from the active index returns
+404 `unknown_node`. An indexed node with no matching relation returns itself and no edges.
+No request-controlled repository/path/URL or graph mutations are accepted.
+
+Each response contains at most 50 nodes, 100 edges and 1,000 evidence records.
+Deterministic edge-ID ordering selects a bounded subgraph; `truncated=true` discloses
+output truncation. Qdrant adjacency scans use owner/version/node filters, 100-point
+pages and a 1,000-chunk scan budget; overflow or invalid upstream data is 503, never
+a falsely complete graph. There is no encoder call for graph queries.
+
+Edges are views over validated chunk payloads, with no independent graph store to
+reconcile. Quote removal updates/removes corresponding edges, unchanged facts retain
+IDs, partial snapshots do not delete unseen facts, and deletions follow successful
+writes. A reconcile is not atomic: existing single-writer/mixed-revision caveats apply.
+See [source review](source-review.md) for the nine initially activated architecture
+relations and explicitly missing evidence. The German architecture question can be
+presented from these structured facts; absent links remain absent.

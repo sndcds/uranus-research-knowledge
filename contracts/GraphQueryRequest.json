@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "Relation": {
+      "enum": [
+        "contains",
+        "defines",
+        "implements",
+        "calls",
+        "uses",
+        "uses_model",
+        "reads_from",
+        "writes_to",
+        "exposes",
+        "documented_by",
+        "part_of",
+        "organizes",
+        "has_occurrence",
+        "occurs_at",
+        "uses_space",
+        "has_category",
+        "has_genre",
+        "located_in",
+        "implemented_by"
+      ],
+      "title": "Relation",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "depth": {
+      "default": 1,
+      "maximum": 2,
+      "minimum": 1,
+      "title": "Depth",
+      "type": "integer"
+    },
+    "node": {
+      "maxLength": 3200,
+      "minLength": 1,
+      "title": "Node",
+      "type": "string"
+    },
+    "relations": {
+      "items": {
+        "$ref": "#/$defs/Relation"
+      },
+      "maxItems": 19,
+      "title": "Relations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "node"
+  ],
+  "title": "GraphQueryRequest",
+  "type": "object"
+}

@@ -1,17 +1,11 @@
 import json
 from pathlib import Path
 
-from uranus_research_knowledge.models import (
-    AnswerRequest,
-    AnswerResponse,
-    Chunk,
-    QueryRequest,
-    QueryResponse,
-)
+from uranus_research_knowledge.schemas import CONTRACTS
 
 
 def test_committed_schemas():
-    for model in (QueryRequest, QueryResponse, AnswerRequest, AnswerResponse, Chunk):
+    for model in CONTRACTS:
         assert (
             json.loads(Path(f"contracts/{model.__name__}.json").read_text())
             == model.model_json_schema()

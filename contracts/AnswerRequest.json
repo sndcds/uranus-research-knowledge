@@ -2,7 +2,6 @@
   "additionalProperties": false,
   "properties": {
     "fact": {
-      "default": "unknown",
       "enum": [
         "uranus_overview",
         "admin_overview",
@@ -14,8 +13,7 @@
         "planner_component",
         "geocoding",
         "architecture",
-        "founding_date",
-        "unknown"
+        "founding_date"
       ],
       "title": "Fact",
       "type": "string"
@@ -35,7 +33,8 @@
     }
   },
   "required": [
-    "query"
+    "query",
+    "fact"
   ],
   "title": "AnswerRequest",
   "type": "object"

@@ -1,8 +1,54 @@
 {
   "$defs": {
-    "Evidence": {
+    "GraphEdge": {
       "additionalProperties": false,
-      "description": "Public provenance projection: never serialize internal assertion quotes.",
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "structural",
+            "reviewed"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "object": {
+          "title": "Object",
+          "type": "string"
+        },
+        "predicate": {
+          "$ref": "#/$defs/Relation"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "predicate",
+        "object",
+        "evidence_ids",
+        "kind"
+      ],
+      "title": "GraphEdge",
+      "type": "object"
+    },
+    "GraphEvidence": {
+      "additionalProperties": false,
       "properties": {
         "chunk_text": {
           "anyOf": [
@@ -105,7 +151,7 @@
         "excerpt_included",
         "graph_edge_ids"
       ],
-      "title": "Evidence",
+      "title": "GraphEvidence",
       "type": "object"
     },
     "GraphNode": {
@@ -124,34 +170,6 @@
         "type"
       ],
       "title": "GraphNode",
-      "type": "object"
-    },
-    "Match": {
-      "additionalProperties": false,
-      "properties": {
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/Evidence"
-          },
-          "maxItems": 1,
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
-        },
-        "node": {
-          "$ref": "#/$defs/GraphNode"
-        },
-        "score": {
-          "title": "Score",
-          "type": "number"
-        }
-      },
-      "required": [
-        "score",
-        "node",
-        "evidence"
-      ],
-      "title": "Match",
       "type": "object"
     },
     "NodeType": {
@@ -179,35 +197,70 @@
       ],
       "title": "NodeType",
       "type": "string"
+    },
+    "Relation": {
+      "enum": [
+        "contains",
+        "defines",
+        "implements",
+        "calls",
+        "uses",
+        "uses_model",
+        "reads_from",
+        "writes_to",
+        "exposes",
+        "documented_by",
+        "part_of",
+        "organizes",
+        "has_occurrence",
+        "occurs_at",
+        "uses_space",
+        "has_category",
+        "has_genre",
+        "located_in",
+        "implemented_by"
+      ],
+      "title": "Relation",
+      "type": "string"
     }
   },
   "additionalProperties": false,
   "properties": {
-    "authoritative_source": {
-      "const": "project_sources",
-      "default": "project_sources",
-      "title": "Authoritative Source",
-      "type": "string"
-    },
-    "matches": {
+    "edges": {
       "items": {
-        "$ref": "#/$defs/Match"
+        "$ref": "#/$defs/GraphEdge"
       },
-      "maxItems": 20,
-      "title": "Matches",
+      "maxItems": 100,
+      "title": "Edges",
       "type": "array"
     },
-    "query": {
-      "maxLength": 2000,
-      "minLength": 1,
-      "title": "Query",
-      "type": "string"
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/GraphEvidence"
+      },
+      "maxItems": 1000,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/GraphNode"
+      },
+      "maxItems": 50,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
     }
   },
   "required": [
-    "query",
-    "matches"
+    "nodes",
+    "edges",
+    "evidence"
   ],
-  "title": "QueryResponse",
+  "title": "GraphQueryResponse",
   "type": "object"
 }

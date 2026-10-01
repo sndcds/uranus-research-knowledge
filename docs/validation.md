@@ -5,7 +5,7 @@ main revisions and migration boundaries are recorded in [operations](operations.
 The target knowledge repository already existed with its license commit; this work
 populates it. Encoder code and semantic contracts were not changed.
 
-Executed locally with Python 3.13:
+Historical initial implementation checks (before this follow-up), using Python 3.13:
 
 | Check | Result |
 | --- | --- |
@@ -57,3 +57,71 @@ These checks establish orchestration and evidence contracts, not production fact
 coverage, live model language quality, real Jina relevance or live Qdrant compatibility.
 No production indexing, deployment, publication, browser migration or GitHub PR merge
 was performed. Those steps need their own staged validation and authorization.
+
+## Reviewed graph/license follow-up — 2026-10-01
+
+The current planner architecture is model-backed natural-language planning with
+`research-query-plan-v4`, `research-domain-planner-v2`, strict closed structured
+output and the configured provider/model (production candidate `gpt-5.6-terra`).
+There is no production question catalogue. Live v4 Terra acceptance is still being
+validated separately and was not run here.
+
+| Current check | Result |
+| --- | --- |
+| Knowledge `uv run pytest -q` | 70 passed (28 existing + 42 added cases) |
+| `uv run ruff check .` | Passed |
+| `uv run ruff format --check .` | Passed |
+| `git diff --check` | Passed |
+| Contract generation/reproducibility | Seven schemas regenerated; exact schema tests passed |
+| Configured mypy | Not configured in this repository |
+| Offline reviewed-source extraction | 267 chunks; 25 nodes; 20 edges including nine reviewed architecture edges |
+| Offline JSON-LD | Deterministic ordering and revision-qualified evidence; redistribution gate tested |
+| Current companion acceptance | 4 passed, 4 failed due to Admin's old evidence response schema |
+
+Tests cover stable nodes/logical edges, closed types/predicates, structural
+contains/defines, exact reviewed quotes and path scoping, quote removal, no churn,
+complete/partial reconciliation and failed writes before deletion. Graph checks cover
+incoming/outgoing traversal, unknown nodes/relations, strict depth, node/edge caps,
+scan overflow, malformed upstream provenance, evidence integrity and deterministic
+JSON-LD. Conflicting point revisions fail closed; positive multivalued relations
+coalesce identical edges without inventing exclusivity or inverse edges.
+
+License checks exercise every API route and export: reviewed excerpts are included,
+unreviewed sources withhold text/quotes while preserving provenance and supported
+facts, payload license labels cannot grant access, unreviewed revisions fail closed,
+and indexed works never inherit the service-code license. Existing private-path,
+secret-content, encoder-contract, authentication and reconciliation tests remain green.
+The eleven FactKeys match the companion domain schemas; `unknown` and missing fact
+intents are rejected. Founding date still returns `supported=false` in Knowledge.
+
+The source review used explicit GitHub reads outside tests. Ordinary tests use
+synthetic sources/transports and contact no GitHub, real encoder or Qdrant. The
+full-source review and eight-snapshot CLI export were local and did not index Qdrant.
+
+### Cross-repository acceptance and merge blocker
+
+Read-only source archives were pinned to Admin
+`181bfd39a098e7860bb5eb7b947c4b5dff8fdbc4` and Planner
+`c47321f8b3e048cddca2eabbe634974b1f6ca951`. The existing Knowledge-owned harness
+now injects synthetic v4 model decisions instead of relying on the removed planner
+catalogue. No provider network call or production credential was used.
+
+A disposable `postgis/postgis:17-3.5` container on a dynamically assigned loopback
+port ran the guarded synthetic `_test` database. It was stopped and removed after
+validation. Two PostgreSQL acceptance questions, full planner/Admin plan-schema
+parity and eleven-FactKey parity passed. Three project-answer scenarios returned
+502 from Admin, and a new metadata-only Evidence acceptance check failed validation.
+
+Cause: Admin's copied `app/schemas/project_knowledge.py` still requires internal
+Chunk fields, including nonempty `chunk_text` and quote-bearing assertions, and
+rejects new public Evidence fields. Its copied evidence FactKey also still has
+`unknown`, despite the corrected eleven-key domain schema. No compatibility mode
+was added and no companion source was modified. These four failures remain visible
+in the optional integration harness; they are not skipped or marked expected failure.
+The default CI suite remains Knowledge-only, as before this follow-up.
+
+Before coordinated merge, separately update Admin's evidence contract to this PR's
+generated `AnswerResponse.json`, validate evidence references/provenance without
+requiring redistributed quotes, and rerun all eight integration checks. Separate
+live planner acceptance and staged real encoder/Qdrant validation also remain pending.
+No deployment, production indexing, merge or source-license relicensing was performed.

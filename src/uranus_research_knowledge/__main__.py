@@ -26,6 +26,11 @@ def main():
     index.add_argument("action", choices=["plan", "reconcile"])
     index.add_argument("--snapshot", required=True, type=Path)
     index.add_argument("--report", required=True, type=Path)
+    graph = commands.add_parser("graph")
+    graph.add_argument("action", choices=["export"])
+    graph.add_argument("--format", choices=["jsonld"], required=True)
+    graph.add_argument("--snapshot", required=True, action="append", type=Path)
+    graph.add_argument("--output", required=True, type=Path)
     commands.add_parser("collection-create")
     args = parser.parse_args()
 
@@ -35,6 +40,25 @@ def main():
 
             snapshot = await fetch(args.repository, args.sha)
             args.output.write_text(snapshot.model_dump_json(indent=2) + "\n")
+            return
+        if args.command == "graph":
+            from .graph import export_jsonld
+
+            if len(args.snapshot) > 8:
+                raise ValueError("too_many_snapshots")
+            chunks = []
+            repositories = set()
+            for path in args.snapshot:
+                with path.open("rb") as stream:
+                    data = stream.read(MAX_SNAPSHOT_BYTES + 1)
+                if len(data) > MAX_SNAPSHOT_BYTES:
+                    raise ValueError("snapshot_too_large")
+                snapshot = Snapshot.model_validate_json(data)
+                if snapshot.repository in repositories:
+                    raise ValueError("duplicate_repository_snapshot")
+                repositories.add(snapshot.repository)
+                chunks.extend(extract(snapshot, datetime(1970, 1, 1, tzinfo=UTC)))
+            args.output.write_text(export_jsonld(chunks))
             return
         client = Clients(Settings())
         try:

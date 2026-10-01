@@ -149,6 +149,58 @@ class Clients:
         except (ValueError, TypeError, KeyError):
             raise UpstreamError("invalid_evidence_payload") from None
 
+    async def graph_chunks(self, nodes):
+        from .graph import MAX_QUERY_CHUNKS
+        from .vocabulary import node_type
+
+        if not 1 <= len(nodes) <= 50:
+            raise ValueError("invalid_graph_frontier")
+        for node in nodes:
+            node_type(node)
+        chunks = {}
+        offset = None
+        seen = set()
+        for _ in range(MAX_QUERY_CHUNKS // 100 + 1):
+            page = await self.qdrant(
+                "POST",
+                "/points/scroll",
+                {
+                    "limit": 100,
+                    "offset": offset,
+                    "with_payload": True,
+                    "with_vector": False,
+                    "filter": {
+                        "must": [
+                            {"key": "index_owner", "match": {"value": OWNER}},
+                            {"key": "embedding_version", "match": {"value": EMBEDDING_VERSION}},
+                            {"key": "graph_node_ids", "match": {"any": nodes}},
+                        ]
+                    },
+                },
+            )
+            try:
+                points = page["points"]
+                if not isinstance(points, list) or len(points) > 100:
+                    raise ValueError
+                for point in points:
+                    chunk = Chunk.model_validate(point["payload"])
+                    if (
+                        str(point["id"]) != chunk.point_id
+                        or chunk.point_id in chunks
+                        or not set(nodes).intersection(chunk.graph_node_ids)
+                    ):
+                        raise ValueError
+                    chunks[chunk.point_id] = chunk
+                offset = page["next_page_offset"]
+                if len(chunks) > MAX_QUERY_CHUNKS or offset in seen:
+                    raise ValueError
+                if offset is None:
+                    return [chunks[k] for k in sorted(chunks)]
+                seen.add(offset)
+            except (KeyError, ValueError, TypeError):
+                raise UpstreamError("invalid_graph_inventory") from None
+        raise UpstreamError("graph_scan_limit")
+
     async def existing(self, repository):
         result = {}
         offset = None
